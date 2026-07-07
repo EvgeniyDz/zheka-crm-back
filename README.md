@@ -1,0 +1,105 @@
+# Zheka CRM Backend
+
+Server-side API for Zheka CRM and the existing admin panel.
+
+## What is inside
+
+- NestJS 11 with strict TypeScript.
+- Environment validation with Zod.
+- Swagger docs at `/docs`.
+- Global DTO validation and typed response envelope.
+- Security headers, CORS, compression, throttling.
+- Supabase server client and JWT user guard.
+- RBAC decorators and guards for access control.
+- Audit API for storing operational events.
+- Integration layer for Checkbox, Nova Poshta, and Telegram so secrets can move out of the browser.
+- Health checks for deployment monitoring.
+
+## Quick Start
+
+```bash
+npm install
+cp .env.example .env
+npm run start:dev
+```
+
+API: `http://localhost:4000/api`
+
+Swagger: `http://localhost:4000/docs`
+
+## Suggested Frontend Integration
+
+In `admin-panel`, point `REACT_APP_API_ENDPOINT` to:
+
+```bash
+REACT_APP_API_ENDPOINT=http://localhost:4000/api
+```
+
+The frontend can keep using Supabase while modules are migrated gradually to this backend.
+
+## Environment Strategy
+
+Local development uses `.env` copied from `.env.example`.
+
+Production and staging environment values must be stored in GitHub Secrets and injected by GitHub Actions during deploy. Do not commit real API keys, Supabase service-role keys, bot tokens, or third-party credentials into the frontend or backend repositories.
+
+Required GitHub Secrets:
+
+- `NODE_ENV`
+- `PORT`
+- `API_PREFIX`
+- `APP_URL`
+- `CORS_ORIGINS`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CHECKBOX_API_URL`
+- `CHECKBOX_CLIENT_NAME`
+- `CHECKBOX_CLIENT_VERSION`
+- `NOVA_POSHTA_API_URL`
+- `NOVA_POSHTA_API_KEY`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_CHAT_ID`
+
+## Roadmap
+
+### P0 - Security Baseline
+
+- Rotate exposed credentials found in the current `admin-panel` codebase: Supabase service-role key, Nova Poshta API key, Telegram bot token, and any other browser-visible service credentials.
+- Replace the frontend Supabase service-role client with anon-key auth only. The service-role key must exist only on this backend and only through GitHub Secrets / runtime env.
+- Keep Supabase as the database, but enable and verify RLS for every public schema table currently marked as unrestricted in Supabase.
+- Create explicit RLS policies for CRM roles: admin, manager, warehouse, sales, finance, and read-only users.
+- Move sensitive operations from direct frontend Supabase writes to backend endpoints guarded by Supabase JWT + RBAC.
+- Add CI secret scanning and dependency audit checks to prevent new committed secrets.
+
+### P1 - Backend API Migration
+
+- Create backend modules for current Redux domains: orders, clients, shop items, brands, categories, collections, suppliers, stock receiving, stock write-off, inventory, cash desk, cash operations, gift certificates, notes, analytics, communications, and warranty claims.
+- Move order creation/update flow from `OrderModal.tsx` into transactional backend services.
+- Centralize audit logging in backend services instead of calling `log_audit` from the browser.
+- Add pagination, filtering, sorting, DTO validation, and consistent response contracts for list endpoints.
+- Generate OpenAPI client types for `admin-panel` from Swagger to reduce frontend/backend drift.
+
+### P2 - Integrations
+
+- Move Nova Poshta search, waybill create/update/delete, tracking, and print URL generation behind backend endpoints.
+- Move Telegram order notifications behind backend endpoints.
+- Move Checkbox auth, shifts, receipts, returns, and reports behind backend endpoints.
+- Move Cloudinary upload signing to the backend so upload presets/secrets are not browser-owned.
+- Keep public tracking/print links client-safe, but generate privileged integration requests server-side.
+
+### P3 - Supabase Hardening
+
+- Normalize table naming over time: avoid spaces and mixed casing in new tables, add typed views/adapters for legacy names.
+- Convert loose JSON/string fields into validated DTOs where the business flow is stable.
+- Add migrations for RLS, indexes, constraints, and seed data instead of manual SQL editor changes.
+- Add database tests for permissions, RLS policies, audit triggers, and important RPC functions.
+- Review storage buckets and file access policies for product images, documents, and generated PDFs.
+
+### P4 - Operations
+
+- Add GitHub Actions for lint, typecheck, tests, build, audit, and deploy.
+- Add structured logging, request IDs, and error monitoring.
+- Add rate limits per auth user for expensive integration endpoints.
+- Add backup/restore documentation for Supabase.
+- Add smoke tests for `/api/v1/health`, auth profile, and each critical CRM workflow.

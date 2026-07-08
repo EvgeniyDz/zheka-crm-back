@@ -35,7 +35,16 @@ In `admin-panel`, point `REACT_APP_API_ENDPOINT` to:
 REACT_APP_API_ENDPOINT=http://localhost:4000/api
 ```
 
-The frontend can keep using Supabase while modules are migrated gradually to this backend.
+The frontend can keep using Supabase while we build backend parity. We will connect admin-panel only after the backend has the required modules, security checks, and integration coverage.
+## Smooth Backend Adoption
+
+The admin panel must keep working without this backend while we build the full server-side API. First we complete backend parity for the CRM domains and integrations; only after that we start connecting admin-panel through feature flags and `REACT_APP_API_ENDPOINT`. If a flag or endpoint is missing, the frontend keeps using the existing Supabase/browser path.
+
+See [docs/backend-adoption.md](docs/backend-adoption.md) for the migration rules, suggested adapter shape, and rollback strategy.
+
+## Supabase Security
+
+Supabase remains the database for Zheka CRM. Before enforcing RLS changes, run the read-only audit in [supabase/security/001_rls_audit.sql](supabase/security/001_rls_audit.sql). The security workstream is documented in [supabase/security/README.md](supabase/security/README.md).
 
 ## Environment Strategy
 
@@ -72,13 +81,13 @@ Required GitHub Secrets:
 - Move sensitive operations from direct frontend Supabase writes to backend endpoints guarded by Supabase JWT + RBAC.
 - Add CI secret scanning and dependency audit checks to prevent new committed secrets.
 
-### P1 - Backend API Migration
+### P1 - Build Complete Backend API
 
 - Create backend modules for current Redux domains: orders, clients, shop items, brands, categories, collections, suppliers, stock receiving, stock write-off, inventory, cash desk, cash operations, gift certificates, notes, analytics, communications, and warranty claims.
 - Move order creation/update flow from `OrderModal.tsx` into transactional backend services.
 - Centralize audit logging in backend services instead of calling `log_audit` from the browser.
 - Add pagination, filtering, sorting, DTO validation, and consistent response contracts for list endpoints.
-- Generate OpenAPI client types for `admin-panel` from Swagger to reduce frontend/backend drift.
+- Keep admin-panel unchanged during this phase except for documentation or non-invasive compatibility notes.
 
 ### P2 - Integrations
 
@@ -96,10 +105,20 @@ Required GitHub Secrets:
 - Add database tests for permissions, RLS policies, audit triggers, and important RPC functions.
 - Review storage buckets and file access policies for product images, documents, and generated PDFs.
 
-### P4 - Operations
+### P4 - Admin Panel Connection
 
-- Add GitHub Actions for lint, typecheck, tests, build, audit, and deploy.
+- Add optional frontend API adapters behind feature flags only after backend modules are complete.
+- Generate OpenAPI client types for dmin-panel from Swagger to reduce frontend/backend drift.
+- Connect domains one by one while preserving fallback to the existing Supabase/browser path.
+- Remove browser-visible service credentials only after every caller has a working backend replacement.
+- Keep rollback as a feature flag flip, not a code revert.
+
+### P5 - Operations
+
+- Keep GitHub Actions manual-only while the backend is under active construction, then enable pull_request/push triggers when the project is ready for team CI.
 - Add structured logging, request IDs, and error monitoring.
 - Add rate limits per auth user for expensive integration endpoints.
 - Add backup/restore documentation for Supabase.
 - Add smoke tests for `/api/v1/health`, auth profile, and each critical CRM workflow.
+
+

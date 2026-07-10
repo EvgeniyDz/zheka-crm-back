@@ -1,5 +1,5 @@
 export interface ClientDto {
-  id?: number;
+  id?: string | number;
   email?: string;
   phone?: string;
   password?: string | null;
@@ -17,3 +17,4 @@ export interface ClientDto {
   instagram?: string | null;
   lastContacted?: string | null;
 }
+

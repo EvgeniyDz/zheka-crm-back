@@ -8,12 +8,24 @@ export interface PaginatedResult<T> {
 export interface CategoryDto {
   id: number;
   name: string;
+  slug?: string;
+  order?: number;
+  images?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeys?: string;
   created_at?: string;
 }
 
 export interface BrandDto {
   id: number;
   name: string;
+  slug?: string;
+  order?: number;
+  images?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeys?: string;
   created_at?: string;
 }
 
@@ -49,3 +61,4 @@ export interface CommonReferenceDataDto {
   suppliers: SupplierDto[];
   collections: CollectionDto[];
 }
+

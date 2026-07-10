@@ -67,7 +67,21 @@ Initial read-only backend parity endpoints are available for CRM lists:
 - `GET /api/v1/orders?limit=100&offset=0&search=&status=&platform=&phone=&dateFrom=&dateTo=&sortBy=date&direction=desc`
 - `GET /api/v1/orders/summary?status=&platform=&phone=&dateFrom=&dateTo=`
 
-These endpoints are protected by Supabase JWT auth and RBAC permissions. They are not connected to `admin-panel` yet.
+These endpoints are protected by Supabase JWT auth and RBAC permissions. They are not connected to dmin-panel yet.
+Initial write backend parity is also available for later adapter work:
+
+- `POST /api/v1/clients`
+- `PATCH /api/v1/clients/:id`
+- `DELETE /api/v1/clients/:id`
+- `POST /api/v1/reference-data/categories`
+- `PATCH /api/v1/reference-data/categories/:slug`
+- `DELETE /api/v1/reference-data/categories/:slug`
+- `POST /api/v1/reference-data/brands`
+- `PATCH /api/v1/reference-data/brands/:slug`
+- `DELETE /api/v1/reference-data/brands/:slug`
+- `POST /api/v1/reference-data/suppliers`
+- `PATCH /api/v1/reference-data/suppliers/:id`
+- `DELETE /api/v1/reference-data/suppliers/:id`
 ## Environment Strategy
 
 Local development uses `.env` copied from `.env.example`.
@@ -142,6 +156,7 @@ Required GitHub Secrets:
 - Add rate limits per auth user for expensive integration endpoints.
 - Add backup/restore documentation for Supabase.
 - Add smoke tests for `/api/v1/health`, auth profile, and each critical CRM workflow.
+
 
 
 

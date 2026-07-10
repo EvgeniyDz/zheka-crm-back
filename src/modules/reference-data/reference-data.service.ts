@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ReferenceDataQueryDto } from './dto/reference-data-query.dto';
+import { CatalogReferenceDto } from './dto/catalog-reference.dto';
+import { UpdateCatalogReferenceDto } from './dto/update-catalog-reference.dto';
+import { CreateSupplierDto } from './dto/create-supplier.dto';
+import { UpdateSupplierDto } from './dto/update-supplier.dto';
 import {
   BrandDto,
   CategoryDto,
@@ -29,6 +33,54 @@ export class ReferenceDataService {
     return this.findNamedTable<SupplierDto>('Suppliers', query, 'name');
   }
 
+
+  createCategory(dto: CatalogReferenceDto): Promise<CategoryDto> {
+    return this.createRecord<CategoryDto>('Categories', this.normalizeCatalogPayload(dto));
+  }
+
+  updateCategory(slug: string, dto: UpdateCatalogReferenceDto): Promise<CategoryDto> {
+    return this.updateRecord<CategoryDto>('Categories', 'slug', slug, this.normalizeCatalogPayload(dto));
+  }
+
+  deleteCategory(slug: string) {
+    return this.deleteRecord('Categories', 'slug', slug);
+  }
+
+  createBrand(dto: CatalogReferenceDto): Promise<BrandDto> {
+    return this.createRecord<BrandDto>('Brands', this.normalizeCatalogPayload(dto));
+  }
+
+  updateBrand(slug: string, dto: UpdateCatalogReferenceDto): Promise<BrandDto> {
+    return this.updateRecord<BrandDto>('Brands', 'slug', slug, this.normalizeCatalogPayload(dto));
+  }
+
+  deleteBrand(slug: string) {
+    return this.deleteRecord('Brands', 'slug', slug);
+  }
+
+  createSupplier(dto: CreateSupplierDto): Promise<SupplierDto> {
+    return this.createRecord<SupplierDto>('Suppliers', {
+      name: dto.name.trim(),
+      contacts: dto.contacts?.trim() ?? '',
+      payments_info: dto.payments_info?.trim() ?? '',
+      balance: dto.balance ?? 0,
+    });
+  }
+
+  updateSupplier(id: number, dto: UpdateSupplierDto): Promise<SupplierDto> {
+    const payload = {
+      ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+      ...(dto.contacts !== undefined ? { contacts: dto.contacts?.trim() ?? '' } : {}),
+      ...(dto.payments_info !== undefined ? { payments_info: dto.payments_info?.trim() ?? '' } : {}),
+      ...(dto.balance !== undefined ? { balance: dto.balance } : {}),
+    };
+
+    return this.updateRecord<SupplierDto>('Suppliers', 'id', id, payload);
+  }
+
+  deleteSupplier(id: number) {
+    return this.deleteRecord('Suppliers', 'id', id);
+  }
   async getCollections(query: ReferenceDataQueryDto): Promise<PaginatedResult<CollectionDto>> {
     const limit = query.limit;
     const offset = query.offset;
@@ -84,6 +136,53 @@ export class ReferenceDataService {
     };
   }
 
+
+  private normalizeCatalogPayload(dto: UpdateCatalogReferenceDto) {
+    return {
+      ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+      ...(dto.slug !== undefined ? { slug: dto.slug?.trim() } : {}),
+      ...(dto.order !== undefined ? { order: dto.order } : {}),
+      ...(dto.images !== undefined ? { images: dto.images ?? [] } : {}),
+      ...(dto.seoTitle !== undefined ? { seoTitle: dto.seoTitle ?? '' } : {}),
+      ...(dto.seoDescription !== undefined ? { seoDescription: dto.seoDescription ?? '' } : {}),
+      ...(dto.seoKeys !== undefined ? { seoKeys: dto.seoKeys ?? '' } : {}),
+    };
+  }
+
+  private async createRecord<T>(tableName: string, payload: Record<string, unknown>): Promise<T> {
+    const { data, error } = await this.supabase.admin
+      .from(tableName)
+      .insert([payload])
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data as T;
+  }
+
+  private async updateRecord<T>(
+    tableName: string,
+    column: string,
+    value: string | number,
+    payload: Record<string, unknown>,
+  ): Promise<T> {
+    const { data, error } = await this.supabase.admin
+      .from(tableName)
+      .update(payload)
+      .eq(column, value)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data as T;
+  }
+
+  private async deleteRecord(tableName: string, column: string, value: string | number) {
+    const { error } = await this.supabase.admin.from(tableName).delete().eq(column, value);
+    if (error) throw error;
+
+    return { deleted: true };
+  }
   private async findNamedTable<T>(
     tableName: string,
     query: ReferenceDataQueryDto,
@@ -132,3 +231,4 @@ export class ReferenceDataService {
     };
   }
 }
+

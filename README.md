@@ -46,6 +46,18 @@ See [docs/backend-adoption.md](docs/backend-adoption.md) for the migration rules
 
 Supabase remains the database for Zheka CRM. Before enforcing RLS changes, run the read-only audit in [supabase/security/001_rls_audit.sql](supabase/security/001_rls_audit.sql). The security workstream is documented in [supabase/security/README.md](supabase/security/README.md).
 
+
+## Reference Data API
+
+Initial read-only backend parity endpoints are available under `/api/v1/reference-data`:
+
+- `GET /common` - categories, brands, suppliers, and collections in one response.
+- `GET /categories?limit=100&offset=0&search=`
+- `GET /brands?limit=100&offset=0&search=`
+- `GET /suppliers?limit=100&offset=0&search=`
+- `GET /collections?limit=100&offset=0&search=`
+
+These endpoints are protected by Supabase JWT auth and RBAC permissions. The admin panel is not connected to them yet; this is backend parity work for the later adapter phase.
 ## Environment Strategy
 
 Local development uses `.env` copied from `.env.example`.
@@ -120,5 +132,6 @@ Required GitHub Secrets:
 - Add rate limits per auth user for expensive integration endpoints.
 - Add backup/restore documentation for Supabase.
 - Add smoke tests for `/api/v1/health`, auth profile, and each critical CRM workflow.
+
 
 

@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
+import { ReferenceDataModule } from './modules/reference-data/reference-data.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SupabaseModule } from './modules/supabase/supabase.module';
     UsersModule,
     AuditModule,
     IntegrationsModule,
+    ReferenceDataModule,
   ],
   providers: [
     {
@@ -38,3 +40,4 @@ import { SupabaseModule } from './modules/supabase/supabase.module';
   ],
 })
 export class AppModule {}
+

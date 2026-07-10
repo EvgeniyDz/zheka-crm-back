@@ -9,6 +9,9 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  CHECKBOX_LOGIN: z.string().optional(),
+  CHECKBOX_PASSWORD: z.string().optional(),
+  CHECKBOX_LICENSE_KEY: z.string().optional(),
   CHECKBOX_API_URL: z.string().url().default('https://api.checkbox.in.ua/api/v1'),
   CHECKBOX_CLIENT_NAME: z.string().default('zheka-crm-back'),
   CHECKBOX_CLIENT_VERSION: z.string().default('0.1.0'),
@@ -16,6 +19,12 @@ const envSchema = z.object({
   NOVA_POSHTA_API_KEY: z.string().optional(),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_CHAT_ID: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_UPLOAD_PRESET: z.string().optional(),
+  PAYLINK_BASE_URL: z.string().url().default('http://localhost:9021/api'),
+  PAYLINK_DEVICE_ID: z.string().optional(),
 });
 
 export type EnvironmentVariables = z.infer<typeof envSchema>;
@@ -51,6 +60,9 @@ const configuration = () => {
         apiUrl: env.CHECKBOX_API_URL,
         clientName: env.CHECKBOX_CLIENT_NAME,
         clientVersion: env.CHECKBOX_CLIENT_VERSION,
+        login: env.CHECKBOX_LOGIN,
+        password: env.CHECKBOX_PASSWORD,
+        licenseKey: env.CHECKBOX_LICENSE_KEY,
       },
       novaPoshta: {
         apiUrl: env.NOVA_POSHTA_API_URL,
@@ -60,6 +72,18 @@ const configuration = () => {
         botToken: env.TELEGRAM_BOT_TOKEN,
         chatId: env.TELEGRAM_CHAT_ID,
       },
+      openai: {
+        apiKey: env.OPENAI_API_KEY,
+        model: env.OPENAI_MODEL,
+      },
+      cloudinary: {
+        cloudName: env.CLOUDINARY_CLOUD_NAME,
+        uploadPreset: env.CLOUDINARY_UPLOAD_PRESET,
+      },
+      paylink: {
+        baseUrl: env.PAYLINK_BASE_URL,
+        deviceId: env.PAYLINK_DEVICE_ID,
+      },
     },
   };
 };
@@ -67,3 +91,4 @@ const configuration = () => {
 export type AppConfig = ReturnType<typeof configuration>;
 
 export default configuration;
+

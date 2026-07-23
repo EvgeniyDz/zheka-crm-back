@@ -1,4 +1,5 @@
 export interface OrderDto {
+  id?: string | number;
   date?: string;
   client?: string;
   phone?: string;

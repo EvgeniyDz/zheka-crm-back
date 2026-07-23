@@ -3,14 +3,91 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { PaginatedResult } from '../reference-data/reference-data.types';
 import { OrdersQueryDto } from './dto/orders-query.dto';
 import { OrderDto, OrdersSummaryDto } from './orders.types';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import { AuditService } from '../audit/audit.service';
+import { RequestUser } from '@/shared/types/request-user';
 
 type OrdersQuery = ReturnType<ReturnType<SupabaseService['admin']['from']>['select']>;
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly audit: AuditService,
+  ) {}
 
-  async findAll(query: OrdersQueryDto): Promise<PaginatedResult<OrderDto> & { summary: OrdersSummaryDto }> {
+  async create(user: RequestUser, dto: CreateOrderDto): Promise<OrderDto> {
+    const payload = { ...dto, date: dto.date ?? new Date().toISOString() };
+    const { data, error } = await this.supabase.admin
+      .from('Orders')
+      .insert([payload])
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    const order = data as OrderDto;
+    await this.audit.create(user, {
+      actionType: 'order.created',
+      tableName: 'Orders',
+      recordId: String(order.id ?? ''),
+      newValue: order as unknown as Record<string, unknown>,
+    });
+    return order;
+  }
+
+  async update(user: RequestUser, id: string, dto: UpdateOrderDto): Promise<OrderDto> {
+    const { data: oldValue, error: readError } = await this.supabase.admin
+      .from('Orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (readError) throw readError;
+
+    const { data, error } = await this.supabase.admin
+      .from('Orders')
+      .update(dto)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    const order = data as OrderDto;
+    await this.audit.create(user, {
+      actionType: 'order.updated',
+      tableName: 'Orders',
+      recordId: id,
+      oldValue: oldValue as Record<string, unknown>,
+      newValue: order as unknown as Record<string, unknown>,
+    });
+    return order;
+  }
+
+  async delete(user: RequestUser, id: string): Promise<{ deleted: true }> {
+    const { data: oldValue, error } = await this.supabase.admin
+      .from('Orders')
+      .delete()
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    await this.audit.create(user, {
+      actionType: 'order.deleted',
+      tableName: 'Orders',
+      recordId: id,
+      oldValue: oldValue as Record<string, unknown>,
+    });
+    return { deleted: true };
+  }
+
+  async findAll(
+    query: OrdersQueryDto,
+  ): Promise<PaginatedResult<OrderDto> & { summary: OrdersSummaryDto }> {
     const limit = query.limit;
     const offset = query.offset;
     const search = query.search?.trim();
@@ -36,10 +113,7 @@ export class OrdersService {
       );
     }
 
-    const [{ data, error, count }, summary] = await Promise.all([
-      request,
-      this.getSummary(query),
-    ]);
+    const [{ data, error, count }, summary] = await Promise.all([request, this.getSummary(query)]);
 
     if (error) throw error;
 
@@ -53,18 +127,30 @@ export class OrdersService {
   }
 
   async getSummary(query: OrdersQueryDto): Promise<OrdersSummaryDto> {
-    const [{ count: total, error: totalError }, { count: newCount, error: newError }, { count: processingCount, error: processingError }] =
-      await Promise.all([
-        this.applyFilters(this.supabase.admin.from('Orders').select('date', { count: 'exact', head: true }), query),
-        this.applyFilters(this.supabase.admin.from('Orders').select('date', { count: 'exact', head: true }), {
+    const [
+      { count: total, error: totalError },
+      { count: newCount, error: newError },
+      { count: processingCount, error: processingError },
+    ] = await Promise.all([
+      this.applyFilters(
+        this.supabase.admin.from('Orders').select('date', { count: 'exact', head: true }),
+        query,
+      ),
+      this.applyFilters(
+        this.supabase.admin.from('Orders').select('date', { count: 'exact', head: true }),
+        {
           ...query,
           status: 'new',
-        }),
-        this.applyFilters(this.supabase.admin.from('Orders').select('date', { count: 'exact', head: true }), {
+        },
+      ),
+      this.applyFilters(
+        this.supabase.admin.from('Orders').select('date', { count: 'exact', head: true }),
+        {
           ...query,
           status: 'processing',
-        }),
-      ]);
+        },
+      ),
+    ]);
 
     if (totalError) throw totalError;
     if (newError) throw newError;

@@ -66,6 +66,9 @@ Initial read-only backend parity endpoints are available for CRM lists:
 - `GET /api/v1/clients?limit=100&offset=0&search=&sortBy=created&direction=desc`
 - `GET /api/v1/orders?limit=100&offset=0&search=&status=&platform=&phone=&dateFrom=&dateTo=&sortBy=date&direction=desc`
 - `GET /api/v1/orders/summary?status=&platform=&phone=&dateFrom=&dateTo=`
+- `POST /api/v1/orders`
+- `PATCH /api/v1/orders/:id`
+- `DELETE /api/v1/orders/:id`
 
 These endpoints are protected by Supabase JWT auth and RBAC permissions. They are not connected to dmin-panel yet.
 Initial write backend parity is also available for later adapter work:
